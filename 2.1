@@ -1,0 +1,144 @@
+#include <LiquidCrystal_I2C.h>
+#include <Servo.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // I2C address, columns, rows
+
+const int trigPin1 = 6;
+const int echoPin1 = 5;
+const int trigPin2 = 4;
+const int echoPin2 = 3;
+const int greenLedPin1 = 8;
+const int greenLedPin2 = 9;
+const int buzzerPin = 12;
+const int servoPin = 7;
+
+const int carStationaryThreshold = 165;  // Adjust this value as per your requirements
+
+int totalParkingSpots = 2;
+int availableParkingSpots = totalParkingSpots;
+
+bool isCarMoving = false;
+bool buzzerActivated1 = false;
+bool buzzerActivated2 = false;
+
+Servo servo;
+
+void setup() {
+  pinMode(greenLedPin1, OUTPUT);
+  pinMode(greenLedPin2, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+
+  lcd.begin(16, 2);
+  lcd.print("Parking System");
+  lcd.setCursor(0, 1);
+  lcd.print("Spots: ");
+
+  updateLCD();
+
+  servo.attach(servoPin);  // Attaching the servo to the corresponding pin
+}
+
+void loop() {
+  int distance1 = getDistance(trigPin1, echoPin1);
+  int distance2 = getDistance(trigPin2, echoPin2);
+
+  if (distance1 > carStationaryThreshold) {
+    digitalWrite(greenLedPin1, HIGH);  // Turn on LED 1
+  } else {
+    digitalWrite(greenLedPin1, LOW);   // Turn off LED 1
+  }
+
+  if (distance2 > carStationaryThreshold) {
+    digitalWrite(greenLedPin2, HIGH);  // Turn on LED 2
+  } else {
+    digitalWrite(greenLedPin2, LOW);   // Turn off LED 2
+  }
+
+  if (distance1 > carStationaryThreshold && distance2 > carStationaryThreshold) {
+    // Parking spots are empty
+    availableParkingSpots = totalParkingSpots;
+    updateLCD();
+
+    if (isCarMoving) {
+      isCarMoving = false;
+      deactivateServoMotor();
+      stopBuzzer();
+    }
+  } else {
+    // At least one parking spot is occupied or car is moving
+    availableParkingSpots = totalParkingSpots - 1;
+    updateLCD();
+
+    if (!isCarMoving) {
+      isCarMoving = true;
+      blinkLED();       // Blink the LED to indicate car movement
+    }
+
+    if (distance1 < carStationaryThreshold) {
+      if (!buzzerActivated1) {
+        activateBuzzer(buzzerPin); // Activate the buzzer for sensor 1
+        buzzerActivated1 = true;
+      }
+    } else {
+      buzzerActivated1 = false;
+    }
+
+    if (distance2 < carStationaryThreshold) {
+      if (!buzzerActivated2) {
+        activateBuzzer(buzzerPin); // Activate the buzzer for sensor 2
+        buzzerActivated2 = true;
+      }
+    } else {
+      buzzerActivated2 = false;
+    }
+  }
+
+  delay(500);  // Adjust the delay as per your requirements
+}
+
+int getDistance(int trigPin, int echoPin) {
+  pinMode(trigPin, OUTPUT);
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  pinMode(echoPin, INPUT);
+  unsigned long duration = pulseIn(echoPin, HIGH);
+
+  int distance = duration * 0.034 / 2;
+  return distance;
+}
+
+void updateLCD() {
+  lcd.setCursor(7, 1);
+  lcd.print(availableParkingSpots);
+}
+
+void activateServoMotor() {
+  // Code to activate the servo motor
+  servo.write(90);  // Set the servo to the desired position
+}
+
+void deactivateServoMotor() {
+  // Code to deactivate the servo motor
+  servo.write(0);  // Set the servo to the off position
+}
+
+void blinkLED() {
+  digitalWrite(buzzerPin, HIGH);  // Turn on the buzzer
+  delay(100);                     // Delay for 100 milliseconds
+  digitalWrite(buzzerPin, LOW);   // Turn off the buzzer
+  delay(100);                     // Delay for 100 milliseconds
+}
+
+void activateBuzzer(int pin) {
+  digitalWrite(pin, HIGH);  // Turn on the buzzer
+  delay(1000);               // Buzz for 1 second
+  digitalWrite(pin, LOW);   // Turn off the buzzer
+}
+
+void stopBuzzer() {
+  digitalWrite(buzzerPin, LOW);  // Turn off the buzzer
+}
