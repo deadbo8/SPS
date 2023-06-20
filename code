@@ -7,8 +7,8 @@ const int trigPin1 = 6;
 const int echoPin1 = 5;
 const int trigPin2 = 4;
 const int echoPin2 = 3;
-const int greenLedPin = 8;
-const int redLedPin = 9;
+const int greenLedPin1 = 8;
+const int greenLedPin2 = 9;
 const int buzzerPin = 12;
 const int servoPin = 7;
 
@@ -22,8 +22,8 @@ bool isCarMoving = false;
 Servo servo;
 
 void setup() {
-  pinMode(greenLedPin, OUTPUT);
-  pinMode(redLedPin, OUTPUT);
+  pinMode(greenLedPin1, OUTPUT);
+  pinMode(greenLedPin2, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
 
   lcd.begin(16, 2);
@@ -40,10 +40,20 @@ void loop() {
   int distance1 = getDistance(trigPin1, echoPin1);
   int distance2 = getDistance(trigPin2, echoPin2);
 
+  if (distance1 > carStationaryThreshold) {
+    digitalWrite(greenLedPin1, HIGH);  // Turn on LED 1
+  } else {
+    digitalWrite(greenLedPin1, LOW);   // Turn off LED 1
+  }
+
+  if (distance2 > carStationaryThreshold) {
+    digitalWrite(greenLedPin2, HIGH);  // Turn on LED 2
+  } else {
+    digitalWrite(greenLedPin2, LOW);   // Turn off LED 2
+  }
+
   if (distance1 > carStationaryThreshold && distance2 > carStationaryThreshold) {
     // Parking spots are empty
-    digitalWrite(greenLedPin, HIGH);  // Turn on the green LED
-    digitalWrite(redLedPin, LOW);     // Turn off the red LED
     availableParkingSpots = totalParkingSpots;
     updateLCD();
 
@@ -53,8 +63,6 @@ void loop() {
     }
   } else {
     // At least one parking spot is occupied or car is moving
-    digitalWrite(greenLedPin, LOW);   // Turn off the green LED
-    digitalWrite(redLedPin, HIGH);    // Turn on the red LED
     availableParkingSpots = totalParkingSpots - 1;
     updateLCD();
 
@@ -98,15 +106,15 @@ void deactivateServoMotor() {
 }
 
 void blinkLED() {
-  digitalWrite(redLedPin, HIGH);   // Turn on the red LED
-  delay(500);                      // Delay for 500 milliseconds
-  digitalWrite(redLedPin, LOW);    // Turn off the red LED
-  delay(500);                      // Delay for 500 milliseconds
+  digitalWrite(buzzerPin, HIGH);  // Turn on the buzzer
+  delay(100);                     // Delay for 100 milliseconds
+  digitalWrite(buzzerPin, LOW);   // Turn off the buzzer
+  delay(100);                     // Delay for 100 milliseconds
 }
 
 void activateBuzzer() {
-  digitalWrite(buzzerPin, HIGH);   // Turn on the buzzer
-  delay(500);                      // Delay for 500 milliseconds
-  digitalWrite(buzzerPin, LOW);    // Turn off the buzzer
-  delay(500);                      // Delay for 500 milliseconds
+  digitalWrite(buzzerPin, HIGH);  // Turn on the buzzer
+  delay(500);                     // Delay for 500 milliseconds
+  digitalWrite(buzzerPin, LOW);   // Turn off the buzzer
+  delay(500);                     // Delay for 500 milliseconds
 }
